@@ -2,17 +2,32 @@
 Export your traewelling statuses to a json or csv file.
 
 ## Installation
-You'll need python version 3.7 or higher. Then you have to install the pip requirements:
+Just clone the repository and install the utility using `pipx`
 ```sh
-pip install -r requirements.txt
+git clone https://github.com/adridevelopsthings/traewelling-export
+cd traewelling-export
+pipx install .
 ```
 
-## Run
-Just generate an access token [here](https://traewelling.de/settings/security/api-tokens). Then run
-```sh
-TRAEWELLING_TOKEN=YOUR_GENERATED_TRAEWELLING_TOKEN_HERE python main.py
+## Usage
+Just run
 ```
-If you don't want to write the token in the shell you can also create an `.env` file containing
+traewelling-export -o statuses.json
 ```
-TRAEWELLING_TOKEN=YOUR_GENERATED_TRAEWELLING_TOKEN_HERE
+
+### Detailed Usage
+```
+usage: -m [-h] [-a AUTH_CONTEXT] [-t {json,csv}] [-o OUTPUT] [-c CACHE_DIRECTORY] [--oauth-client-id OAUTH_CLIENT_ID] [--purge-cache] [--disable-cache]
+
+options:
+  -h, --help            show this help message and exit
+  -a, --auth-context AUTH_CONTEXT
+                        If you want multiple auth contexts give a name for each one to keep them in the cache apart
+  -t, --type {json,csv}
+                        Output file format
+  -o, --output OUTPUT   Output file path
+  -c, --cache-directory CACHE_DIRECTORY
+  --oauth-client-id OAUTH_CLIENT_ID
+  --purge-cache
+  --disable-cache
 ```

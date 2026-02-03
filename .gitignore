@@ -1,2 +1,6 @@
 output*
-.env
+__pycache__
+.venv
+.mypy_cache
+build
+*.egg-info

@@ -1,0 +1,22 @@
+[project]
+name = "traewelling-export"
+version = "0.1.0"
+description = "Export your traewelling statuses to a json or csv file"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "platformdirs>=4.5.1",
+    "requests>=2.32.5",
+    "url64>=0.1.0",
+]
+
+[dependency-groups]
+dev = [
+    "types-requests>=2.32.4.20260107",
+]
+
+[project.scripts]
+traewelling-export = "traewelling_export:main"
+
+[tool.setuptools.packages.find]
+include = ["traewelling_export*"]
