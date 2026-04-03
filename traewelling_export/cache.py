@@ -2,9 +2,9 @@ from hashlib import blake2s
 from json import dump, load
 from os import listdir, mkdir, remove
 from os.path import exists, join
-from typing import Optional, Type, TypeAlias, TypeVar
+from typing import Any, Optional, Type, TypeAlias, TypeVar
 
-K: TypeAlias = str | dict[str, str]
+K: TypeAlias = str | dict[str, Any]
 O = TypeVar("O", str, dict, list)
 
 

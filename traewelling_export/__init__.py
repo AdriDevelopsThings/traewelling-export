@@ -1,3 +1,4 @@
+from datetime import datetime
 from json import dump
 from os import environ
 from typing import Any, Optional
@@ -52,8 +53,6 @@ def write_output(statuses: list[dict], file, type: str) -> None:
 
 def main() -> None:
     args = parser.parse_args()
-    output_type = args.type
-    output_path = args.output.replace("SUFFIX", output_type)
     cache = Cache(args.cache_directory, args.disable_cache)
 
     if args.purge_cache:
@@ -61,10 +60,10 @@ def main() -> None:
         print("Cache purged")
         return
 
-    auth: Auth
+    auth: Optional[Auth] = None
     if environ.get("TRAEWELLING_TOKEN"):
         auth = TokenAuth(environ["TRAEWELLING_TOKEN"])
-    else:
+    elif not args.skip_auth:
         auth = OAuth2(
             cache,
             args.auth_context,
@@ -74,41 +73,75 @@ def main() -> None:
         )
 
     traewelling = TraewellingClient(auth)
-    me = traewelling.get_me()
-    username = me["username"]
+
+    username: Optional[str] = args.username
+    if not username:
+        if args.skip_auth:
+            raise Exception(
+                "Authentication is disabled but no username is supplied, I couldn't guess who you are."
+            )
+        me = traewelling.get_me()
+        username: str = me["username"]
 
     statuses: list[dict] = []
     page = 1
     print("Fetching statuses...")
     while True:
         print(f"\033[KPage {page}", end="\r", flush=True)
-        cached_page: Optional[list[dict]] = cache.get("page", str(page), list)
+        cached_page: Optional[list[dict]] = cache.get(
+            f"{username}-page", str(page), list
+        )
+        cached = False
         if cached_page and page != 1:
+            cached = True
             statuses.extend(cached_page)
-            page += 1
-            continue
         elif not cached_page and page == 1:
-            cache.purge(nmspc="page")
-        data = traewelling.get_user_statuses(username, page=page)
-        if not data:
+            cache.purge(nmspc=f"{username}-page")
+
+        if not cached:
+            data = traewelling.get_user_statuses(username, page=page)
+            if not data:
+                break
+
+            if (
+                cached_page
+                and page == 1
+                and (
+                    len(cached_page) != len(data)
+                    or any(
+                        [c["id"] != data[i]["id"] for (i, c) in enumerate(cached_page)]
+                    )
+                )
+            ):
+                # first page real and cached don't match, invalidate cache
+                cache.purge(nmspc=f"{username}-page")
+
+            cache.set(f"{username}-page", str(page), data)
+            statuses.extend(data)
+
+        if args.limit and len(statuses) >= args.limit:
+            statuses = statuses[: len(statuses)]
             break
 
         if (
-            cached_page
-            and page == 1
-            and (
-                len(cached_page) != len(data)
-                or any([c["id"] != data[i]["id"] for (i, c) in enumerate(cached_page)])
-            )
+            args.until
+            and len(statuses) > 0
+            and datetime.fromisoformat(statuses[-1]["createdAt"]) < args.until
         ):
-            # first page real and cached don't match, invalidate cache
-            cache.purge(nmspc="page")
-
-        cache.set("page", str(page), data)
-        statuses.extend(data)
+            statuses = [
+                status
+                for status in statuses
+                if datetime.fromisoformat(status["createdAt"]) >= args.until
+            ]
+            break
         page += 1
 
     print()
+
+    output_type = args.type
+    output_path = args.output.replace("SUFFIX", output_type).replace(
+        "USERNAME", username
+    )
 
     with open(output_path, "w") as file:
         write_output(statuses, file, output_type)

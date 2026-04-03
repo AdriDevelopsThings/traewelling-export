@@ -13,12 +13,15 @@ TRAEWELLING_USER_STATUSES_URL = TRAEWELLING_BASE + "/api/v1/user/{USERNAME}/stat
 
 
 class TraewellingClient:
-    def __init__(self, auth: Auth) -> None:
+    def __init__(self, auth: Optional[Auth]) -> None:
         self.__auth = auth
 
     def __get_auth_headers(self) -> dict[str, str]:
-        token = self.__auth.get_token()
-        return {"Authorization": f"Bearer {token}"}
+        if self.__auth:
+            token = self.__auth.get_token()
+            return {"Authorization": f"Bearer {token}"}
+        else:
+            return {}
 
     def __http_get(self, url: str, params: Optional[dict[str, Any]] = None) -> dict:
         response = requests.get(url, params=params, headers=self.__get_auth_headers())
